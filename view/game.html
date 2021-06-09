@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="game.css">
+    <title>gamePlay</title>
+</head>
+<body>
+    <div class="first">
+        <h1>please enter user name to go further</h1>
+        <input type="text">
+        <button onclick="user(event)">press</button>
+    </div>
+    <div class="second">
+        <h1>chose your favorite game below</h1>
+        <br>
+        <div class="game">
+            <button onclick="game(event)">pokemon</button>
+        </div>
+        <br>
+        <div class="game">
+            <button onclick="game(event)">Cricket</button>
+        </div>
+        <br>
+        <div class="ticket">
+             <button onclick="buyTicket()">by ticket</button>
+        </div>
+        <br>
+        <div>
+            <button onclick="ticketDetails()"> ticket details</button>
+        </div>
+         <br>
+        <div>
+            <table id="table">
+                <tr>
+                    <th>ticketId</th>
+                    <th>gameName</th>
+                    <th>userName</th>
+                </tr>
+            </table>
+        </div>
+        <br>
+        <div class="random">
+            <button onclick="gRandom()"> generate random number for this game</button>
+        </div>
+        <br>
+        <div>
+            <button onclick="allRandom()">all randoms</button>
+            <p id="show"></p>
+        </div>
+    </div>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.19.0/axios.min.js"></script>
+    <script>
+        function user(e) {
+             const user = e.target.parentElement.children[1].value
+             console.log(user);
+             if(!user) { return alert('please enter th user name'); } 
+             localStorage.setItem('user',user);
+             document.getElementsByClassName('first')[0].style.display = 'none'
+             document.getElementsByClassName('second')[0].style.display = 'block'
+         }
+
+
+        async function game(e) {
+            console.log(e.target.innerText);
+            const gameId = await axios.post('http://localhost:3000/game',{gName: e.target.innerText})
+            console.log(gameId.data.id)
+            localStorage.setItem("gameId",gameId.data.id);
+
+            console.log(localStorage.getItem("gameId"))
+        }
+
+
+        async function buyTicket() {
+            const gameId = parseInt(localStorage.getItem("gameId"));
+            const user =  localStorage.getItem("user");
+            if(gameId) {
+                 console.log(gameId);
+                 console.log(user)
+                 const ticketId = await axios.post(`http://localhost:3000/${gameId}/ticket/${user}/generate`);
+                 
+                 localStorage.setItem('ticketId', ticketId.data.ticketId);
+            }
+            else { alert("select the game first"); }
+        }
+         
+         async function ticketDetails() {
+             const ticketId = parseInt(localStorage.getItem('ticketId'))
+             
+             if(ticketId) {
+                const detail = await axios.get(`http://localhost:3000/ticket/${ticketId}`);
+                const data = detail.data.details;
+                console.log(data);
+                const table= document.getElementById('table');
+                const tr = document.createElement('tr');
+               
+                let td = document.createElement('td')
+                td.innerText = data.ticketId;
+                tr.appendChild(td);
+                td = document.createElement('td')
+                td.innerText = data.gameId;
+                tr.appendChild(td);
+                td = document.createElement('td')
+                td.innerText = data.userName;
+                tr.appendChild(td);
+                
+                console.log(td)
+                table.appendChild(tr);
+                
+             }
+
+             else { alert("please select the ticket first"); }
+            
+         }
+
+         async function gRandom() {
+             const gameId = parseInt(localStorage.getItem("gameId"));
+             const ran = await axios.get(`http://localhost:3000/api/game/${gameId}/number/random`)
+             console.log(ran.data.data)
+         }
+
+         async function allRandom() {
+            const gameId = parseInt(localStorage.getItem("gameId"));
+            const ran = await axios.get(`http://localhost:3000/api/game/${gameId}/numbers`)
+            console.log(ran.data.data)
+            
+            const all = document.getElementById('show');
+            all.innerHTML += `all random values generated of gameId ${gameId} are<br>`
+            all.innerHTML += `${ran.data.data}<br>`
+
+         }
+    </script>
+</body>
+</html>
